@@ -16,6 +16,7 @@ def download_selenium():
     title = driver.title
     
     data = {'Page Title': title}
+    print(data)
     return data
 
 @app.route('/', methods=['GET', 'POST'])

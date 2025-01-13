@@ -1,23 +1,38 @@
+# Use a lightweight Python base image
+FROM python:3.9-slim
+
+# Set the port environment variable (default: 443)
 ARG PORT=443
+ENV PORT=${PORT}
 
-# Use a specific Cypress browser image
-FROM cypress/browsers:node16.17.0-chrome104-ff102-edge105
+# Set the working directory inside the container
+WORKDIR /app
 
-# Install Python3 and pip
-RUN apt-get update && apt-get install -y python3 python3-pip
+# Install system dependencies (for Chrome and Selenium)
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    wget \
+    unzip \
+    curl \
+    && apt-get clean
 
-# Set the user base path for Python
-ENV PATH /root/.local/bin:$PATH
+# Install Chrome and Chromedriver
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && dpkg -i google-chrome-stable_current_amd64.deb || apt-get -f install -y \
+    && wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip -d /usr/local/bin/ \
+    && rm -rf chromedriver_linux64.zip google-chrome-stable_current_amd64.deb
 
 # Copy requirements.txt and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Copy the entire application to the container
 COPY . .
 
-# Expose the port
-EXPOSE $PORT
+# Expose the specified port
+EXPOSE ${PORT}
 
-# Command to run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+# Set the default command to run the Flask app
+CMD ["python", "backendserver.py"]
