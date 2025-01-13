@@ -1,25 +1,12 @@
-FROM python:3.9-slim
-
-WORKDIR /app
-
-# Install necessary system packages
-RUN apt-get update && apt-get install -y python3-pip wget unzip \
-    && apt-get clean
-
-# Install Python dependencies
+ARG PORT=443
+FROM cypress/browser:latest
+RUN apt-get install python3 -y
+RUN echo $(python3 -m site --user-base)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Chrome and Chromedriver for Selenium
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-    && dpkg -i google-chrome-stable_current_amd64.deb || apt-get -f install -y \
-    && wget https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
-    && unzip chromedriver_linux64.zip -d /usr/local/bin/ \
-    && rm -rf chromedriver_linux64.zip google-chrome-stable_current_amd64.deb
+ENV PATH /home/root/.local/bin:${PATH}
+RUN apt-get update && apt-get install -y python3-pip && pip install -r requirements.txt
 
-# Copy application files
 COPY . .
 
-EXPOSE 3000
-
-CMD ["python", "backendserver.py"]
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
